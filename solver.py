@@ -84,7 +84,8 @@ class Solver:
         """
         print system information to console
         """
-        print('\nPosition, R = {}\n\trx = {}'.format(self.R, self.R[0]))
+        print('\nPosition, R = {}\n'.format(self.R))
+        print('     rx =', self.R[0])
         print('     ry =', self.R[1])
         print('     rz =', self.R[2])
         print('\nVelocity, V = {}\n'.format(self.V))
@@ -147,7 +148,7 @@ class Solver:
         print('\npropagating state...\n')
         for ti in self.times:
             self.evaluate_state(ti)
-        print('... finished')
+        print('...finished')
 
     def vector_derivative(self, v, wrt, diff=None, result=None):
         """

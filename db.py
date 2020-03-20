@@ -14,14 +14,16 @@ class Database:
         param columns: column names for table
         """
         # NOTE: database file name will be 'table'.db
+        # NOTE: dropping db on start to ensure no overlapping results
         self.table = table
+        self.db = './results/%s.db' % self.table
+        self.drop()
         self.columns = columns
         if memory:
             db_type = ':memory:'
         else:
-            db_type = table
-
-        self.conn = sqlite3.connect('./results/%s.db' % db_type)
+            db_type = self.db
+        self.conn = sqlite3.connect(db_type)
         self.c = self.conn.cursor()
         self.init_db()
 
@@ -31,7 +33,7 @@ class Database:
         """
         self.c.execute("""CREATE TABLE IF NOT EXISTS {} ({})"""
                        .format(self.table, self.columns))
-        print('...database created\nusing %s table' % (self.table))
+        print('...database created\nusing %s table' % self.table)
 
     def insert(self, *args):
         """
@@ -50,7 +52,7 @@ class Database:
     def query(self, ti=None):
         """
         query table to retrieve results at time
-        If time is None, SELECT * from db
+        If time is None, all data from db
         param ti: time to query
         """
         if ti is None:
@@ -67,8 +69,11 @@ class Database:
         """
         drop filesystem database
         """
-        os.remove('%s.db' % self.table)
-        print('\n... %s database dropped\n' % self.table)
+        try:
+            os.remove(self.db)
+            print('\n... %s database dropped\n' % self.db)
+        except OSError:
+            print('...database does not exist')
 
     def close(self):
         """

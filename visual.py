@@ -23,7 +23,9 @@ class Visual:
         """
         print('Visualising...\n')
         plt.rcParams['animation.ffmpeg_path'] = '/usr/local/bin/ffmpeg'
+        self.db = './results/%s.db' % table
         self.table = table
+        self.anim_filename = './animations/%s.mp4' % self.table
         self.df = self.query_db()
         self.ani = None
         self.fig = plt.figure(figsize=(11, 8), facecolor='black')
@@ -87,7 +89,7 @@ class Visual:
         """
         query the results db and read into pandas dataframe
         """
-        conn = sqlite3.connect('./results/%s.db' % self.table)
+        conn = sqlite3.connect(self.db)
         return pd.read_sql_query("SELECT * FROM {}".format(self.table), conn)
 
     def config_plot(self):
@@ -200,6 +202,6 @@ class Visual:
         save simulation animation
         """
         print('Creating animation movie...')
-        FFwriter = animation.FFMpegWriter(fps=30)
-        self.ani.save('./animations/%s.mp4' % self.table, writer=FFwriter)
-        print('... movie saved as %s.mp4' % self.table)
+        FFwriter = animation.FFMpegWriter(fps=45)
+        self.ani.save(self.anim_filename, writer=FFwriter)
+        print('... movie saved as %s' % self.anim_filename)
