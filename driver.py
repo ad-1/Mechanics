@@ -8,30 +8,29 @@ from visual import Visual
 if __name__ == '__main__':
 
     t = sp.symbols('t')
-    tf, dt = 360, 0.5
+    tf, dt = 360 * 4, 5
 
     # xyz positions of particle in space in terms of time
-    x, y, z = sp.sin(3*t), sp.cos(t), sp.sin(2*t)
-    # x, y, z = 8*t**2 + 7*t + 6, 5*t**3 + 4, 0.3*t**4 + 2*t**2 + 1
+    # x, y, z = sp.sin(3*t), sp.cos(t), sp.sin(2*t)
+    x, y, z = sp.cos(t), sp.sin(t), t
     R = [x, y, z]
 
-    # Database name
-    db = 'knmtx.db'
-    table = db[:-3]
-    print('\nDatabase:', db, '\nTable:', table, '\n')
+    # Database name == table
+    table = 'spiral'
+    print('\nDatabase: %s.db\tTable:%s\n', table, table)
 
     # Run configuration
-    solve = False
+    solve = True
     drop = False
     visualise = True
 
     if solve:
-        sv = Solver(t, R, 0, tf, dt, db, table, memory=False)
+        sv = Solver(t, R, 0, tf, dt, table, memory=False)
         sv.propogate()
         sv.close()
 
     if visualise:
-        vz = Visual(db, table)
+        vz = Visual(table, save=True)
 
     if solve and drop:
         sv.db.drop()
