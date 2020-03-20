@@ -114,7 +114,7 @@ class Solver:
         at = self.at.subs(self.t, ti_r)
         an = np.dot(A, un)
         rho = v_mag**2 / an
-        Rc = R + rho * un
+        Rc = R + (rho * un)
         self.insert_data(ti, R[0], R[1], R[2], r_mag,
                          V[0], V[1], V[2], v_mag,
                          A[0], A[1], A[2], a_mag, an, at,
@@ -124,6 +124,7 @@ class Solver:
     def get_columns():
         """
         table names for results database
+        return: string of variable names
         """
         return """
             \'t\', \'rx\', \'ry\', \'rz\', \'r_mag\',
@@ -147,6 +148,7 @@ class Solver:
         print('\npropagating state...\n')
         for ti in self.times:
             self.evaluate_state(ti)
+        print('... finished')
 
     def vector_derivative(self, v, wrt, diff=None, result=None):
         """
