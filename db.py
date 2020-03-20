@@ -6,22 +6,22 @@ import sqlite3
 
 class Database:
 
-    def __init__(self, db, table, memory, columns):
+    def __init__(self, table, memory, columns):
         """
         kinematics propagation database class
-        param db: database name for .db file
         param table: table name
         param memory: use RAM if True else use file for db
         param columns: column names for table
         """
+        # NOTE: database file name will be 'table'.db
         self.table = table
         self.columns = columns
         if memory:
             db_type = ':memory:'
         else:
-            db_type = db
+            db_type = table
 
-        self.conn = sqlite3.connect(db_type)
+        self.conn = sqlite3.connect('./results/%s.db' % db_type)
         self.c = self.conn.cursor()
         self.init_db()
 

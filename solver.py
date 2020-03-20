@@ -24,7 +24,7 @@ from db import Database
 
 class Solver:
 
-    def __init__(self, t, R, t0, tf, dt, db, table, memory):
+    def __init__(self, t, R, t0, tf, dt, table, memory):
         """
         initialise kinematics solver
         param t: symbolic variable t defined using sympi
@@ -33,8 +33,7 @@ class Solver:
         param t0: initial time
         param tf: final time
         param dt: change in time
-        param db: database name
-        param table: table name
+        param table: database name and table name
         param memory: (bool) indicating to use RAM or file for db
         """
 
@@ -45,7 +44,7 @@ class Solver:
         self.t = t  # symbolic variable t
         columns = self.get_columns()
         print('variables to write to db:', columns)
-        self.db = Database(db, table, memory, columns)
+        self.db = Database(table, memory, columns)
 
         print('\n', '=' * 50, '\n\nInitialising solver...')
 

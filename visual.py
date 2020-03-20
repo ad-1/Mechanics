@@ -13,7 +13,7 @@ from matplotlib import animation
 
 class Visual:
 
-    def __init__(self, db, table):
+    def __init__(self, table, save=False):
         """
         Used to visualise the simulation results from the
         kinematic propagation of a particle moving through
@@ -23,7 +23,8 @@ class Visual:
         """
         print('Visualising...\n')
         plt.rcParams['animation.ffmpeg_path'] = '/usr/local/bin/ffmpeg'
-        self.df = self.query_db(db, table)
+        self.table = table
+        self.df = self.query_db()
         self.ani = None
         self.fig = plt.figure(figsize=(11, 8), facecolor='black')
         self.ax = p3.Axes3D(self.fig)
@@ -35,7 +36,8 @@ class Visual:
         self.prev_artists = []
         self.config_plot()
         self.animate()
-        self.save_animation()
+        if save:
+            self.save_animation()
         print('\n... finished')
 
     def new_text(self, x, y, z, txt, color):
@@ -81,13 +83,12 @@ class Visual:
                        mutation_scale=10,
                        lw=1, arrowstyle='-|>', color=color)
 
-    @staticmethod
-    def query_db(db, table):
+    def query_db(self):
         """
         query the results db and read into pandas dataframe
         """
-        conn = sqlite3.connect(db)
-        return pd.read_sql_query("SELECT * FROM {}".format(table), conn)
+        conn = sqlite3.connect('./results/%s.db' % self.table)
+        return pd.read_sql_query("SELECT * FROM {}".format(self.table), conn)
 
     def config_plot(self):
         """
@@ -199,6 +200,6 @@ class Visual:
         save simulation animation
         """
         print('Creating animation movie...')
-        FFwriter = animation.FFMpegWriter(fps=45)
-        self.ani.save('animation.mp4', writer=FFwriter)
-        print('... movie saved as kinematics.mp4')
+        FFwriter = animation.FFMpegWriter(fps=30)
+        self.ani.save('./animations/%s.mp4' % self.table, writer=FFwriter)
+        print('... movie saved as %s.mp4' % self.table)
