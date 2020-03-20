@@ -68,7 +68,7 @@ class Database:
         drop filesystem database
         """
         os.remove('%s.db' % self.table)
-        print('\n... %s database dropped\n' % self.db)
+        print('\n... %s database dropped\n' % self.table)
 
     def close(self):
         """
