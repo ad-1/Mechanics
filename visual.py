@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import mpl_toolkits.mplot3d.axes3d as p3
 from arrow_3d import Arrow3D
+from matplotlib import animation
 
 # Visualise the change over time of kinematic properties
 
@@ -21,12 +22,10 @@ class Visual:
         runs through the simulation.
         """
         print('Visualising...\n')
-        # plt.style.use("dark_background")
-        # style = {"lines.linewidth": 2, "axes.facecolor": "#410448"}
-        # plt.rcParams.update(style)
+        plt.rcParams['animation.ffmpeg_path'] = '/usr/local/bin/ffmpeg'
         self.df = self.query_db(db, table)
         self.ani = None
-        self.fig = plt.figure(figsize=(11, 8))
+        self.fig = plt.figure(figsize=(11, 8), facecolor='black')
         self.ax = p3.Axes3D(self.fig)
         self.coc, = self.create_line_plot('Centre of Curvature', 'mo')
         self.pos_text = self.new_text(0, 0, 0, ' P', 'g')
@@ -37,17 +36,24 @@ class Visual:
         self.config_plot()
         self.animate()
         self.save_animation()
-        print('... finished')
+        print('\n... finished')
 
     def new_text(self, x, y, z, txt, color):
         """
         create new text artist for the plot
+        param x: x coordinate of text
+        param y: y coordinate of text
+        param z: z coordinate of text
+        param txt: text string
+        param color: text color
         """
         return self.ax.text(x, y, z, txt, size=10, color=color)
 
     def new_quiver_plot(self, var, color):
         """
         define a new quiver plot for vector
+        param var: label text for plot
+        param color: color of plot
         """
         # NOTE: method previously used for plotting
         return self.ax.quiver([], [], [], [], [], [],
@@ -60,6 +66,8 @@ class Visual:
     def create_line_plot(var, style):
         """
         define an empty plot for animating
+        param var: label for plot
+        param style: line style e.g. 'mo' or 'r-'
         """
         return plt.plot([], [], [], style, label=var)
 
@@ -83,7 +91,7 @@ class Visual:
 
     def config_plot(self):
         """
-        Setting the axes properties
+        Setting the axes properties such as title, limits, labels
         """
         lim_params = ['r', 'v']
         x_limits = self.get_limits(lim_params, 'x')
@@ -130,7 +138,8 @@ class Visual:
 
     def plot_vectors(self, i):
         """
-        plot velocity vector at each time step for the particle
+        plot animation function for vector at each time step.
+        visualise change in position, velocity, radius of curvature
         param i: time step
         """
         # position vector
@@ -189,5 +198,7 @@ class Visual:
         """
         save simulation animation
         """
-        # TODO: save animation as movie or gif
-        pass
+        print('Creating animation movie...')
+        FFwriter = animation.FFMpegWriter(fps=45)
+        self.ani.save('animation.mp4', writer=FFwriter)
+        print('... movie saved as kinematics.mp4')
