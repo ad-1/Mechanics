@@ -11,6 +11,4 @@ From this we can determine the particle's velocity, acceleration and radius of c
 
 For the visualisation of the example equation above, see below:
 
-<div style="text-align:center">
-<img src="animations/animation.gif" alt="sample kinematic visualisation" width="600"/>
-</div>
+<p align="center"><img src="animations/animation.gif" alt="sample kinematic visualisation" width="800"/></p>
