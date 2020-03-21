@@ -24,12 +24,13 @@ from db import Database
 
 class Solver:
 
-    def __init__(self, db_dir, table, memory, t, R, t0, tf, dt):
+    def __init__(self, db_dir, db_name, table, drop_on_init, t, R, t0, tf, dt):
         """
         initialise kinematics solver
         param db_dir: simulation results directory
-        param table: table name == database name
-        param memory: (bool) indicating to use RAM or file for db
+        param db_name: simulation database name
+        param table: table name
+        param drop_on_int: remove existing database if exists
         param t: symbolic variable t - removes req to import sympy
         param R: symbolic equation for change in position over time
         vector in the form R = [rxi, ryj, rzk]
@@ -38,12 +39,11 @@ class Solver:
         param dt: change in time
         """
 
-        columns = self.get_columns()
-        print('variables to write to db:', columns)
-        self.db = Database(db_dir, table, columns, memory)
-        self.t = t
-
         print('\n', '=' * 50, '\n\nInitialising solver...')
+        columns = self.get_columns()
+        print('\nvariables to write to db:', columns)
+        self.db = Database(db_dir, db_name, table, drop_on_init, columns)
+        self.t = t
 
         if not self.validate_time(t0, tf, dt):
             print('Invalid time input...')
