@@ -120,6 +120,7 @@ class Visual:
         self.ax.set_ylabel('y')
         self.ax.set_zlabel('z')
         self.ax.set_title('Kinematics Visualisation')
+        # self.ax.set_aspect('equal')
         # self.ax.legend()
 
     def get_limits(self, params, axis):
