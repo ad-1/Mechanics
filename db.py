@@ -2,37 +2,33 @@
 
 import os
 import sqlite3
+import pandas as pd
 
 
 class Database:
 
-    def __init__(self, db_dir, table, columns, memory):
+    def __init__(self, db_dir, db_name, table,
+                 drop_on_init=False, columns=None):
         """
         kinematics propagation database class
         param db_dir: simulation results directory
-        param table: table name == database name
+        param db_name: database name i.e. filename
+        param table: table name
         param columns: column names for table == output vars
-        param memory: (bool) use RAM if True else use file for db
+        param drop_on_init: drop database if exists to avoid overlapping
         """
-        # NOTE: database file name will be 'table'.db
-        # NOTE: dropping db on start to ensure no overlapping results
-        # TODO: uncouple link between db name and table name to allow
-        # multiple tables to be used in a single db
-        self.make_results_dir(db_dir)
+        self.make_db_dir(db_dir)
         self.table = table
-        self.db = '%s%s.db' % (db_dir, self.table)
-        self.drop()
+        self.db = '%s%s.db' % (db_dir, db_name)
+        if drop_on_init:
+            self.drop()
         self.columns = columns
-        if memory:
-            db_type = ':memory:'
-        else:
-            db_type = self.db
-        self.conn = sqlite3.connect(db_type)
+        self.conn = sqlite3.connect(self.db)
         self.c = self.conn.cursor()
         self.init_db()
 
     @staticmethod
-    def make_results_dir(results_dir):
+    def make_db_dir(results_dir):
         """
         make results directory if doesn't exist
         param results_dir: str
@@ -42,7 +38,7 @@ class Database:
 
     def init_db(self):
         """
-        initialise propagation results database
+        create simulation results database
         """
         self.c.execute("""CREATE TABLE IF NOT EXISTS {} ({})"""
                        .format(self.table, self.columns))
@@ -65,18 +61,20 @@ class Database:
     def query(self, ti=None):
         """
         query table to retrieve results at time
-        If time is None, all data from db
         param ti: time to query
+        If ti is None, read all results into pandas dataframe
+        If ti is not None, return query results for that time
+        return: pandas dataframe or row
         """
         if ti is None:
-            command = "SELECT * FROM {}".format(self.table)
-            self.c.execute(command)
-            print(self.c.fetchall())
+            cmd = "SELECT * FROM {}".format(self.table)
+            self.c.execute(cmd)
+            return pd.read_sql_query(cmd, self.conn)
         else:
             print('query for time, t = %f' % ti)
-            command = "SELECT * FROM {} WHERE t={}".format(self.table, ti)
-            self.c.execute(command)
-            print(self.columns, '\n', self.c.fetchone())
+            cmd = "SELECT * FROM {} WHERE t={}".format(self.table, ti)
+            self.c.execute(cmd)
+            return self.c.fetchone()
 
     def drop(self):
         """
