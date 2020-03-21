@@ -24,29 +24,30 @@ from db import Database
 
 class Solver:
 
-    def __init__(self, t, R, t0, tf, dt, table, memory):
+    def __init__(self, db_dir, table, memory, t, R, t0, tf, dt):
         """
         initialise kinematics solver
-        param t: symbolic variable t defined using sympi
-        param R: symbolic equation of change in position over time
-        R = rxi + ryj + rzk
+        param db_dir: simulation results directory
+        param table: table name == database name
+        param memory: (bool) indicating to use RAM or file for db
+        param t: symbolic variable t - removes req to import sympy
+        param R: symbolic equation for change in position over time
+        vector in the form R = [rxi, ryj, rzk]
         param t0: initial time
         param tf: final time
         param dt: change in time
-        param table: database name and table name
-        param memory: (bool) indicating to use RAM or file for db
         """
+
+        columns = self.get_columns()
+        print('variables to write to db:', columns)
+        self.db = Database(db_dir, table, columns, memory)
+        self.t = t
+
+        print('\n', '=' * 50, '\n\nInitialising solver...')
 
         if not self.validate_time(t0, tf, dt):
             print('Invalid time input...')
             raise ValueError('Time must be positive and numeric')
-
-        self.t = t  # symbolic variable t
-        columns = self.get_columns()
-        print('variables to write to db:', columns)
-        self.db = Database(table, memory, columns)
-
-        print('\n', '=' * 50, '\n\nInitialising solver...')
 
         self.times = np.arange(t0, tf, dt, dtype='float')
         self.n_steps = (tf - t0) / dt
@@ -60,7 +61,7 @@ class Solver:
         self.at = self.vector_magnitude(self.V).diff(t)
 
         self.system_equations_info()
-        print('=' * 50)
+        print('\n', '=' * 50)
 
     @staticmethod
     def validate_time(t0, tf, dt):
@@ -95,11 +96,11 @@ class Solver:
         print('\nAccekeration, A = {}\n'.format(self.A))
         print('     ax =', self.A[0])
         print('     ay =', self.A[1])
-        print('     az =', self.A[2], '\n')
+        print('     az =', self.A[2])
 
     def evaluate_state(self, ti):
         """
-        evaluate positon, velocity and acceleration at time t
+        evaluate position, velocity, acceleration etc. at time ti
         param ti: current time step
         """
         ti_r = self.d2r(ti)
@@ -145,10 +146,10 @@ class Solver:
         """
         propogate system through time steps
         """
-        print('\npropagating state...\n')
+        print('\npropagating state...', end=' ')
         for ti in self.times:
             self.evaluate_state(ti)
-        print('...finished')
+        print('finished')
 
     def vector_derivative(self, v, wrt, diff=None, result=None):
         """

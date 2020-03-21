@@ -3,44 +3,48 @@
 import sqlite3
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
 import mpl_toolkits.mplot3d.axes3d as p3
-from arrow_3d import Arrow3D
+from matplotlib.animation import FuncAnimation
 from matplotlib import animation
+from arrow_3d import Arrow3D
 
 # Visualise the change over time of kinematic properties
 
 
 class Visual:
 
-    def __init__(self, table, save=False):
+    def __init__(self, table, db_dir, save_dir='./animations/', save=False):
         """
         Used to visualise the simulation results from the
         kinematic propagation of a particle moving through
         space.
         Requires a connection to the results database and
         runs through the simulation.
+        param table: database table name == database filename
+        param db_dir: simulation results database directory
+        param save_dir: directory to save mp4 animation
+        param save: bool indicating to save animation mp4
         """
-        print('Visualising...\n')
+        print('Visualising...', end=' ')
         plt.rcParams['animation.ffmpeg_path'] = '/usr/local/bin/ffmpeg'
-        self.db = './results/%s.db' % table
         self.table = table
-        self.anim_filename = './animations/%s.mp4' % self.table
+        self.db = '%s%s.db' % (db_dir, self.table)
+        self.anim_filename = '%s%s.mp4' % (save_dir, self.table)
         self.df = self.query_db()
-        self.ani = None
         self.fig = plt.figure(figsize=(11, 8), facecolor='black')
         self.ax = p3.Axes3D(self.fig)
         self.coc, = self.create_line_plot('Centre of Curvature', 'mo')
         self.pos_text = self.new_text(0, 0, 0, ' P', 'g')
         self.coc_text = self.new_text(0, 0, 0, ' C', 'm')
         self.vel_text = self.new_text(0, 0, 0, ' V', 'r')
+        self.config_plot()
         self.plot_trajectory()
         self.prev_artists = []
-        self.config_plot()
+        self.ani = None
         self.animate()
         if save:
             self.save_animation()
-        print('\n... finished')
+        print('finished')
 
     def new_text(self, x, y, z, txt, color):
         """
