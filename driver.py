@@ -8,11 +8,11 @@ from visual import Visual
 t = sp.symbols('t')
 
 # Start, end and time step for simulation
-t0, tf, dt = 0, 360 * 6, 2
+t0, tf, dt = 0, 360, 2
 
 # [x, y, z] positions of particle in space in terms of time
-R1 = [sp.sin(3*t), sp.cos(t), sp.sin(2*t)]  # Sample orbit
-R = [sp.cos(t), sp.sin(t), t]  # Spiral: z=t, Circle: z=0*t
+R = [sp.sin(3*t), sp.cos(t), sp.cos(2*t)]  # Sample orbit
+# R = [sp.cos(t), sp.sin(t), t]  # Spiral: z=t, Circle: z=0*t
 print('\nR =', R, '\n')
 
 
@@ -21,14 +21,14 @@ print('\nR =', R, '\n')
 
 print('*' * 50, '\n\nRun configuration...')
 
-# NOTE: table name == db name
-db_dir, table, memory = './results/', 'spiral_2', False
+db_dir, db_name, table = './results/', 'Orbit', 'z_sin2t'
+anim_dir = './animations/'
 solve = False
 drop = False
 visualise = True
-save = False
+save_anim = True
 
-print('\nDatabase: %s.db\tTable: %s\n' % (table, table))
+print('\nDatabase: %s.db\tTable: %s\n' % (db_name, table))
 
 if solve:
     print('generating new simulation results...')
@@ -36,19 +36,19 @@ if solve:
 else:
     print('using existing database...')
 
-if drop:
-    print('simulation results will NOT be saved...')
+if solve and drop:
+    print('simulation database will NOT be saved...')
 else:
-    print('simulation results will be saved...')
+    print('simulation database will be saved...')
 
 if visualise:
     print('running simulation visualisation...')
 elif solve and not visualise:
-    print(solve, visualise, 'no visualisation, only solving...')
+    print('no visualisation, only solving...')
 else:
     print('Doing nothing...')
 
-if save:
+if visualise and save_anim:
     print('will save animation mp4 file...')
 else:
     print('will NOT save animation mp4 file...')
@@ -63,12 +63,12 @@ print('\n', '*' * 50, '\n')
 if __name__ == '__main__':
 
     if solve:
-        sv = Solver(db_dir, table, memory, t, R, t0, tf, dt)
+        sv = Solver(db_dir, db_name, table, drop, t, R, t0, tf, dt)
         sv.propogate()
         sv.close()
 
     if visualise:
-        vz = Visual(table, db_dir)
+        vz = Visual(db_dir, db_name, table, anim_dir, save_anim)
 
-    if drop:
+    if solve and drop:
         sv.db.drop()
