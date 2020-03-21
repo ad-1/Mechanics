@@ -1,44 +1,44 @@
 # Kinematics Visualisation
 
-import sqlite3
-import pandas as pd
+import os
 import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d.axes3d as p3
 from matplotlib.animation import FuncAnimation
 from matplotlib import animation
 from arrow_3d import Arrow3D
+from db import Database
 
 # Visualise the change over time of kinematic properties
 
 
 class Visual:
 
-    def __init__(self, table, db_dir, save_dir='./animations/', save=False):
+    def __init__(self, db_dir, db_name, table, save_dir, save):
         """
         Used to visualise the simulation results from the
         kinematic propagation of a particle moving through
         space.
         Requires a connection to the results database and
         runs through the simulation.
-        param table: database table name == database filename
         param db_dir: simulation results database directory
+        param db_name: database name -- filename
+        param table: database table name == database filename
         param save_dir: directory to save mp4 animation
         param save: bool indicating to save animation mp4
         """
         print('Visualising...', end=' ')
         plt.rcParams['animation.ffmpeg_path'] = '/usr/local/bin/ffmpeg'
         self.table = table
-        self.db = '%s%s.db' % (db_dir, self.table)
+        self.db = Database(db_dir, db_name, table)
+        self.df = self.db.query()
         self.anim_filename = '%s%s.mp4' % (save_dir, self.table)
-        self.df = self.query_db()
         self.fig = plt.figure(figsize=(11, 8), facecolor='black')
         self.ax = p3.Axes3D(self.fig)
         self.coc, = self.create_line_plot('Centre of Curvature', 'mo')
-        self.pos_text = self.new_text(0, 0, 0, ' P', 'g')
-        self.coc_text = self.new_text(0, 0, 0, ' C', 'm')
-        self.vel_text = self.new_text(0, 0, 0, ' V', 'r')
+        self.pos_text = self.text_artist(' P', 'g')
+        self.coc_text = self.text_artist(' C', 'm')
+        self.vel_text = self.text_artist(' V', 'r')
         self.config_plot()
-        self.plot_trajectory()
         self.prev_artists = []
         self.ani = None
         self.animate()
@@ -46,14 +46,14 @@ class Visual:
             self.save_animation()
         print('finished')
 
-    def new_text(self, x, y, z, txt, color):
+    def text_artist(self, txt, color, x=0, y=0, z=0):
         """
         create new text artist for the plot
+        param txt: text string
+        param color: text color
         param x: x coordinate of text
         param y: y coordinate of text
         param z: z coordinate of text
-        param txt: text string
-        param color: text color
         """
         return self.ax.text(x, y, z, txt, size=10, color=color)
 
@@ -93,8 +93,10 @@ class Visual:
         """
         query the results db and read into pandas dataframe
         """
-        conn = sqlite3.connect(self.db)
-        return pd.read_sql_query("SELECT * FROM {}".format(self.table), conn)
+        if os.path.isfile(self.db):
+            self.db.query()
+        else:
+            print('Simulation results database does not exist...')
 
     def config_plot(self):
         """
@@ -111,14 +113,14 @@ class Visual:
         self.ax.plot([x_limits[0], x_limits[1]], [0, 0], [0, 0], 'k-', lw=1)
         self.ax.plot([0, 0], [y_limits[0], y_limits[1]], [0, 0], 'k-', lw=1)
         self.ax.plot([0, 0], [0, 0], [z_limits[0], z_limits[1]], 'k-', lw=1)
-        self.new_text(x_limits[1], 0, 0, 'x', 'k')
-        self.new_text(0, y_limits[1], 0, 'y', 'k')
-        self.new_text(0, 0, z_limits[1], 'z', 'k')
+        self.text_artist('x', 'k', x_limits[1], 0, 0)
+        self.text_artist('y', 'k', 0, y_limits[1], 0)
+        self.text_artist('z', 'k', 0, 0, z_limits[1])
         self.ax.set_xlabel('x')
         self.ax.set_ylabel('y')
         self.ax.set_zlabel('z')
         self.ax.set_title('Kinematics Visualisation')
-        self.ax.legend()
+        # self.ax.legend()
 
     def get_limits(self, params, axis):
         """
@@ -136,13 +138,6 @@ class Visual:
                 lower_lim = m
         return (lower_lim, upper_lim)
 
-    def plot_trajectory(self):
-        """
-        plot trajectory of particle in 3d space
-        """
-        plt.plot(self.df['rx'], self.df['ry'], self.df['rz'], 'b-',
-                 label='trajectory')
-
     def plot_vectors(self, i):
         """
         plot animation function for vector at each time step.
@@ -151,6 +146,7 @@ class Visual:
         """
         # position vector
         rx, ry, rz = self.get_vector(['rx', 'ry', 'rz'], i)
+        self.ax.plot([rx], [ry], [rz], 'bo', label='trajectory')
 
         # velocity vector
         # v_mag = self.df['v_mag'][i]
