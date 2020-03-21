@@ -6,17 +6,21 @@ import sqlite3
 
 class Database:
 
-    def __init__(self, table, memory, columns):
+    def __init__(self, db_dir, table, columns, memory):
         """
         kinematics propagation database class
-        param table: table name
-        param memory: use RAM if True else use file for db
-        param columns: column names for table
+        param db_dir: simulation results directory
+        param table: table name == database name
+        param columns: column names for table == output vars
+        param memory: (bool) use RAM if True else use file for db
         """
         # NOTE: database file name will be 'table'.db
         # NOTE: dropping db on start to ensure no overlapping results
+        # TODO: uncouple link between db name and table name to allow
+        # multiple tables to be used in a single db
+        self.make_results_dir(db_dir)
         self.table = table
-        self.db = './results/%s.db' % self.table
+        self.db = '%s%s.db' % (db_dir, self.table)
         self.drop()
         self.columns = columns
         if memory:
@@ -26,6 +30,15 @@ class Database:
         self.conn = sqlite3.connect(db_type)
         self.c = self.conn.cursor()
         self.init_db()
+
+    @staticmethod
+    def make_results_dir(results_dir):
+        """
+        make results directory if doesn't exist
+        param results_dir: str
+        """
+        if not os.path.exists(results_dir):
+            os.mkdir(results_dir)
 
     def init_db(self):
         """
@@ -79,5 +92,5 @@ class Database:
         """
         close database connection
         """
-        print('\n...closing connection\n')
+        print('...closing database connection\n')
         self.conn.close()
