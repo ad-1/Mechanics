@@ -199,8 +199,8 @@ class Visual:
         param i: time step
         """
 
-        if self.anim_counter >= self.n_loops:
-            return
+        # if self.anim_counter >= self.n_loops:
+        #    return
 
         # ax1
 
