@@ -83,7 +83,7 @@ class Solver:
 
     def system_equations_info(self):
         """
-        print system information to console
+        print equation information to console
         """
         print('\nPosition, R = {}\n'.format(self.R))
         print('     rx =', self.R[0])
@@ -103,53 +103,39 @@ class Solver:
         evaluate position, velocity, acceleration etc. at time ti
         param ti: current time step
         """
+        # NOTE: no. of parms in insert_data must match no. of columns
         ti_r = self.d2r(ti)
         r_mag, R = self.eval_v(self.R, ti_r)
         v_mag, V = self.eval_v(self.V, ti_r)
         a_mag, A = self.eval_v(self.A, ti_r)
-        # v_theta = [self.r2d(tht) for tht in self.direction_angles(V, v_mag)]
-        # a_theta = [self.r2d(tht) for tht in self.direction_angles(A, a_mag)]
-        ut = self.unit_vector(V, v_mag)
-        ub = self.unit_binormal(V, A)
-        un = self.unit_normal(ub, ut)
+        v_theta = [self.r2d(tht) for tht in self.direction_angles(V, v_mag)]
+        a_psi = [self.r2d(psi) for psi in self.direction_angles(A, a_mag)]
+        ut = self.unit_vector(v_vmag=(V, v_mag))
+        ub = self.unit_vector(v_a=(V, A))
+        un = self.unit_vector(u1_u2=(ub, ut))
         at = self.at.subs(self.t, ti_r)
         an = np.dot(A, un)
         rho = v_mag**2 / an
         Rc = R + (rho * un)
+        rc_mag = self.vector_magnitude(Rc)
         self.insert_data(ti, R[0], R[1], R[2], r_mag,
                          V[0], V[1], V[2], v_mag,
                          A[0], A[1], A[2], a_mag, an, at,
-                         rho, Rc[0], Rc[1], Rc[2])
+                         rho, Rc[0], Rc[1], Rc[2], rc_mag)
 
     @staticmethod
     def get_columns():
         """
         table names for results database
-        return: string of variable names
+        return: string of variable names separated by ,
         """
+        # NOTE: these are the column names used in the db
         return """
             \'t\', \'rx\', \'ry\', \'rz\', \'r_mag\',
             \'vx\', \'vy\', \'vz\', \'v_mag\',
             \'ax\', \'ay\', \'az\', \'a_mag\', \'an\', \'at\',
-            \'rho\', \'rcx\', \'rcy\', \'rcz\'
+            \'rho\', \'rcx\', \'rcy\', \'rcz\', \'rc_mag\'
             """
-
-    def insert_data(self, *args):
-        """
-        insert results into database
-        param *args: parameters to save
-        """
-        args = [float(arg) for arg in args]
-        self.db.insert(args)
-
-    def propogate(self):
-        """
-        propogate system through time steps
-        """
-        print('\npropagating state...', end=' ')
-        for ti in self.times:
-            self.evaluate_state(ti)
-        print('finished')
 
     def vector_derivative(self, v, wrt, diff=None, result=None):
         """
@@ -161,8 +147,7 @@ class Solver:
         return V: velcoity vector and components in x, y, z
         """
         if diff is not None and result is not None:
-            print('d({})/d{} = {}'
-                  .format(diff, wrt, result))
+            print('d({})/d{} = {}'.format(diff, wrt, result))
         return [c.diff(wrt) for c in v]
 
     def eval_v(self, v, ti):
@@ -184,58 +169,59 @@ class Solver:
         """
         if mag is None:
             mag = self.vector_magnitude(v)
-        angles = [acos(c / mag) for c in v]
-        return angles
+        return [acos(c / mag) for c in v]
 
-    def unit_vector(self, v, v_mag=None):
+    def unit_vector(self, v_vmag=None, v_a=None, u1_u2=None):
         """
-        determine unit vector in the direction of v
+        Calculate a unit vector using one of three input parameters.
+        Two ways to compute unit vector:
+
+        1. using vector and vector magnitude
+        e.g. unit tangent vector is given by v/v_mag
         param v: vector with components x,y,z
         param v_mag: magnitude of vector
-        """
-        if v_mag is None:
-            v_mag = self.vector_magnitude(v)
-        return [c / v_mag for c in v]
 
-    def unit_binormal(self, v=None, a=None, ut=None, un=None):
-        """
-        orthogonal unit vectors in the direction of velocity (ut)
+        2. using vectors v and a.
+        e.g. velocity and acceleration vectors can be used to
+        determine the unit binormal. ub = cross(v,a)/mag(cross(v,a))
+
+        3. using orthogonal unit vectors.
+        e.g. unit tangent and unit normal vectors can be used to
+        determine the unit binormal. ub = corss(ut, un)
+
+        2. and 3. used generally used to calculate one of two vectors.
+
+        a. unit binormal
+        Orthogonal unit vectors in the direction of velocity (ut)
         and in the direction towards the centre of curvature (un)
-        for the osculating plane. The unit binormal vector is the
+        form the osculating plane. The unit binormal vector is the
         vector perpendicular to the osculating plane.
+        param v_a: tuple of vectors velocity vector and acceleration vector
+        param ua_ub: tuple of unit tangent and unit normal vectors
         return ub: unit binormal vector
+
+        b. unit normal
+        The unit normal is the unit vector in the direction of the
+        centre of curvature from the particle at position P.
+        param Rcp_rho: tuple position vector of C relative to P and rho
+        param ub_ut: tuple of unit binormal and unit tangent vectors
+        return un: unit normal vector
         """
-        if ut is not None and un is not None:
-            ub = np.cross(ut, un)
-        else:
+
+        if v_vmag is not None:
+            v, mag = v_vmag[0], v_vmag[1]
+            if mag is None:
+                mag = self.vector_magnitude(v)
+            return [c / mag for c in v]
+
+        if v_a is not None:
+            v, a = v_a[0], v_a[1]
             b = np.cross(v, a)
-            ub = self.unit_vector(b)
-        return ub
+            return self.unit_vector(v_vmag=(b, None))
 
-    def unit_normal(self, ub, ut, Rcp=None, rho=None):
-        """
-        unit normal is the unit vector in the direction of the
-        centre of curvature from position P
-        param ub: unit binormal
-        param ut: unit tangent
-        param Rcp: position vector of the centre of curvature, C
-        relative to P
-        param rho: radius of curvature (m)
-        return un: unit normal
-        """
-        if Rcp is not None:
-            un = self.unit_vector(Rcp, rho)
-        else:
-            un = np.cross(ub, ut)
-        return un
-
-    @staticmethod
-    def get_components(v):
-        """
-        get components from vector, v
-        return [vx, vy, vz]: vector in x, y, z components
-        """
-        return v[0], v[1], v[2]
+        if u1_u2 is not None:
+            u1, u2 = u1_u2[0], u1_u2[1]
+            return np.cross(u1, u2)
 
     @staticmethod
     def vector_magnitude(v):
@@ -244,7 +230,37 @@ class Solver:
         param v: vector with components of Cartesian form
         return: magnitude of vector
         """
-        return (v[0]**2 + v[1]**2 + v[2]**2)**(1/2)
+        # NOTE: np.linalg.norm(v) computes Euclidean norm
+        mag = 0
+        for c in v:
+            mag += c**2
+        return mag**(1/2)
+
+    @staticmethod
+    def get_components(v):
+        """
+        get components from vector, v
+        return [vx, vy, vz]: vector in x, y, z components
+        """
+        # TODO: Extend for more dimensions
+        return v[0], v[1], v[2]
+
+    def insert_data(self, *args):
+        """
+        insert results into database
+        param *args: parameters to save
+        """
+        args = [float(arg) for arg in args]
+        self.db.insert(args)
+
+    def propogate(self):
+        """
+        propogate system through time steps
+        """
+        print('\npropagating state...', end=' ')
+        for ti in self.times:
+            self.evaluate_state(ti)
+        print('finished')
 
     @staticmethod
     def d2r(d):
@@ -266,6 +282,6 @@ class Solver:
 
     def close(self):
         """
-        cleanup code
+        cleanup code. close connection to database
         """
         self.db.close()
