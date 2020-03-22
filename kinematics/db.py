@@ -17,7 +17,6 @@ class Database:
         param columns: column names for table == output vars
         param drop_on_init: drop database if exists to avoid overlapping
         """
-        self.make_db_dir(db_dir)
         self.table = table
         self.db = '%s%s.db' % (db_dir, db_name)
         if drop_on_init:
@@ -27,22 +26,13 @@ class Database:
         self.c = self.conn.cursor()
         self.init_db()
 
-    @staticmethod
-    def make_db_dir(results_dir):
-        """
-        make results directory if doesn't exist
-        param results_dir: str
-        """
-        if not os.path.exists(results_dir):
-            os.mkdir(results_dir)
-
     def init_db(self):
         """
         create simulation results database
         """
         self.c.execute("""CREATE TABLE IF NOT EXISTS {} ({})"""
                        .format(self.table, self.columns))
-        print('...database created\nusing %s table' % self.table)
+        print('...database ready\nusing %s table' % self.table)
 
     def insert(self, *args):
         """
