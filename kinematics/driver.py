@@ -1,3 +1,4 @@
+import os
 import sympy as sp
 from solver import Solver
 from visual import Visual
@@ -8,11 +9,11 @@ from visual import Visual
 t = sp.symbols('t')
 
 # Start, end and time step for simulation
-t0, tf, dt = 0, 360, 2
+t0, tf, dt = 0, 360, 1
 
 # [x, y, z] positions of particle in space in terms of time
 R = [sp.sin(3*t), sp.cos(t), sp.cos(2*t)]  # Sample orbit
-# R = [sp.cos(t), sp.sin(t), t]  # Spiral: z=t, Circle: z=0*t
+# R = [sp.cos(t), sp.sin(t), t/5]  # Spiral: z=t, Circle: z=0*t
 print('\nR =', R, '\n')
 
 
@@ -21,10 +22,10 @@ print('\nR =', R, '\n')
 
 print('*' * 50, '\n\nRun configuration...')
 
-db_dir, db_name, table = './results/', 'Orbit', 'z_sin2t'
+db_dir, db_name, table = './results/', 'Orbit', 'z_sin2t_mod'
 anim_dir = './animations/'
-solve = False
-drop = False
+solve = True
+drop = True
 visualise = True
 save_anim = True
 
@@ -59,8 +60,20 @@ print('\n', '*' * 50, '\n')
 #######################################################
 
 
+def make_dir(_dir):
+    """
+    make directory if doesn't exist
+    param _dir: directory string
+    """
+    if not os.path.exists(_dir):
+        os.mkdir(_dir)
+
+
 # Program driver
 if __name__ == '__main__':
+
+    make_dir(db_dir)
+    make_dir(anim_dir)
 
     if solve:
         sv = Solver(db_dir, db_name, table, drop, t, R, t0, tf, dt)
