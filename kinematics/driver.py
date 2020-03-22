@@ -22,7 +22,7 @@ print('\nR =', R, '\n')
 
 print('*' * 50, '\n\nRun configuration...')
 
-db_dir, db_name, table = './results/', 'Orbit', 'z_sin2t_mod'
+db_dir, db_name, table = './results/', 'Orbit', 'orbit'
 anim_dir = './animations/'
 solve = True
 drop = True
