@@ -35,11 +35,11 @@ class Visual:
         self.anim_filename = '%s%s.mp4' % (save_dir, self.table)
         self.fig = plt.figure(figsize=(15, 8))
         self.fig.subplots_adjust(left=0.05,
-                            bottom=None,
-                            right=0.95,
-                            top=None,
-                            wspace=None,
-                            hspace=0.28)
+                                 bottom=None,
+                                 right=0.95,
+                                 top=None,
+                                 wspace=None,
+                                 hspace=0.28)
         gs = gridspec.GridSpec(2, 2)
 
         # axis 1 - 3d visualisation
@@ -60,6 +60,8 @@ class Visual:
         self.ax3 = self.ax2.twinx()
         self.rvt, = self.ax2.plot([], [], 'g-')
         self.vvt, = self.ax3.plot([], [], 'r-')
+
+        self.rmag_text = self.ax2.text(0, 0, '||R||', size=12, color='g')
 
         # axis 3
         self.ax4 = self.fig.add_subplot(gs[1, 1])
@@ -244,6 +246,9 @@ class Visual:
         self.rvt.set_data(t, self.df['r_mag'][:i])
         # magnitude of velocity vs time
         self.vvt.set_data(t, self.df['v_mag'][:i])
+
+        # update r_mag text position
+        self.rmag_text.set_position((self.df['t'][i], self.df['r_mag'][i]))
 
         # ax3
 
